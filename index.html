@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Avviso Parrocchiale - Sant'Alessandro</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #2c3e50;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Panneau de contrôle interactif (Masqué à l'impression) */
+        .admin-panel {
+            background: #ffffff;
+            border: 2px dashed #2980b9;
+            padding: 20px;
+            border-radius: 8px;
+            width: 210mm;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .admin-panel h3 {
+            margin-top: 0;
+            color: #2980b9;
+            font-size: 18px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .form-group input, .form-group select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex-grow: 1;
+        }
+        .btn {
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover { background-color: #1f618d; }
+        .btn-danger { background-color: #c0392b; padding: 4px 8px; font-size: 12px; }
+        .btn-danger:hover { background-color: #962d22; }
+
+        /* Page A4 */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm;
+            background: white;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #b22222;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            font-size: 26px;
+            margin: 0;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .header h2 {
+            font-size: 16px;
+            color: #b22222;
+            margin: 5px 0 0 0;
+            font-weight: 500;
+        }
+        .church-image {
+            width: 100%;
+            height: 250px;
+            background-color: #e0e0e0;
+            background-image: url('chiesa-san-alessandro-zebedia.jpg');
+            background-size: cover;
+            background-position: center;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+        }
+        .content {
+            flex-grow: 1;
+        }
+        .section-title {
+            font-size: 20px;
+            color: #b22222;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .event-card {
+            background: #fff5f5;
+            border-left: 5px solid #b22222;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 6px 6px 0;
+            position: relative;
+        }
+        .event-card.normal {
+            background: #f0f4f8;
+            border-left: 5px solid #2980b9;
+        }
+        .event-date {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .event-details {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 5px 0;
+        }
+        .footer {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            font-size: 14px;
+        }
+
+        /* Masquer le panneau de configuration lors de l'impression PDF */
+        @media print {
+            .admin-panel { display: none; }
+            body { background: none; padding: 0; }
+            .a4-page { box-shadow: none; margin: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Panneau interactif pour ajouter/modifier/supprimer -->
+    <div class="admin-panel">
+        <h3>⚙️ Gestion des annonces (Interactif)</h3>
+        <div class="form-group">
+            <input type="text" id="newDate" placeholder="Date (ex: LUNEDÌ 27 SETTEMBRE)">
+            <select id="newType">
+                <option value="important">Important / Alerte (Rouge)</option>
+                <option value="normal">Normal (Bleu)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="text" id="newText" placeholder="Détails de l'annonce (ex: Ore 11:00 — S. Messa...)">
+        </div>
+        <button class="btn" onclick="addEvent()">➕ Ajouter cette annonce</button>
+    </div>
+
+    <!-- Page A4 de l'affiche -->
+    <div class="a4-page">
+        <div class="content-wrapper">
+            <!-- En-tête -->
+            <div class="header">
+                <h1>Parrocchia di Sant'Alessandro</h1>
+                <h2>Milano</h2>
+            </div>
+
+            <!-- Image de l'église -->
+            <div class="church-image" title="Chiesa di Sant'Alessandro in Zebidia"></div>
+
+            <!-- Corps des annonces dynamique -->
+            <div class="content">
+                <div class="section-title">Avvisi Parrocchiali</div>
+                <div id="events-container">
+                    <!-- Les annonces seront injectées ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Pied de page -->
+        <div class="footer">
+            "Il Signore è il mio pastore: nulla mi manca." (Sal 23)
+        </div>
+    </div>
+
+    <script>
+        // Liste initiale des annonces
+        let events = [
+            {
+                date: "📅 LUNEDÌ 27 SETTEMBRE",
+                details: "<strong>Ore 11:00</strong> — Santa Messa di Esequie (Funerale)<br><span style='color: #c0392b;'>⚠️ <em>Si avvisano i fedeli che, a causa della celebrazione delle esequie, la consueta S. Messa delle ore 11:30 è SOSPESA.</em></span>",
+                type: "important"
+            },
+            {
+                date: "📅 VENERDÌ 3 OTTOBRE",
+                details: "<strong>Ore 17:00</strong> — Adorazione Eucaristica<br><strong>Ore 18:00</strong> — Santa Messa",
+                type: "normal"
+            }
+        ];
+
+        function renderEvents() {
+            const container = document.getElementById('events-container');
+            container.innerHTML = "";
+            
+            events.forEach((ev, index) => {
+                const card = document.createElement('div');
+                card.className = `event-card ${ev.type === 'normal' ? 'normal' : ''}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex-grow: 1;">
+                            <div class="event-date" contenteditable="true" onblur="updateEvent(${index}, 'date', this.innerText)">${ev.date}</div>
+                            <div class="event-details" contenteditable="true" onblur="updateEvent(${index}, 'details', this.innerHTML)">${ev.details}</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteEvent(${index})" title="Supprimer cette annonce">🗑️ Supprimer</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addEvent() {
+            const dateInput = document.getElementById('newDate');
+            const textInput = document.getElementById('newText');
+            const typeInput = document.getElementById('newType');
+
+            if (!dateInput.value || !textInput.value) {
+                alert("Veuillez remplir la date et les détails de l'annonce.");
+                return;
+            }
+
+            events.push({
+                date: dateInput.value,
+                details: textInput.value,
+                type: typeInput.value
+            });
+
+            // Réinitialiser les champs
+            dateInput.value = "";
+            textInput.value = "";
+
+            renderEvents();
+        }
+
+        function deleteEvent(index) {
+            events.splice(index, 1);
+            renderEvents();
+        }
+
+        function updateEvent(index, field, value) {
+            events[index][field] = value;
+        }
+
+        // Charger les annonces au démarrage
+        renderEvents();
+    </script>
+</body>
+</html>
