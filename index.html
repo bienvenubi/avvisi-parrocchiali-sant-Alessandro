@@ -15,7 +15,24 @@
             align-items: center;
         }
 
-        /* Panneau de contrôle interactif (Masqué à l'impression) */
+        /* Barre de connexion admin (Discrète) */
+        .admin-login-bar {
+            width: 210mm;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .login-btn {
+            background-color: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .login-btn:hover { background-color: #626567; }
+
+        /* Panneau de contrôle interactif (Masqué par défaut et à l'impression) */
         .admin-panel {
             background: #ffffff;
             border: 2px dashed #2980b9;
@@ -25,11 +42,15 @@
             box-sizing: border-box;
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: none; /* Masqué par défaut */
         }
         .admin-panel h3 {
             margin-top: 0;
             color: #2980b9;
             font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .form-group {
             margin-bottom: 10px;
@@ -55,6 +76,7 @@
         .btn:hover { background-color: #1f618d; }
         .btn-danger { background-color: #c0392b; padding: 4px 8px; font-size: 12px; }
         .btn-danger:hover { background-color: #962d22; }
+        .btn-logout { background-color: #e74c3c; font-size: 12px; padding: 4px 8px; }
 
         /* Page A4 */
         .a4-page {
@@ -91,7 +113,8 @@
             width: 100%;
             height: 250px;
             background-color: #e0e0e0;
-            background-image: url('chiesa-san-alessandro-zebedia.jpg');
+            /* Lien direct vers une image de l'église Sant'Alessandro à Milan sur Internet */
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e5/Milano_-_Sant%27Alessandro_in_Zebidia_-_Foto_Giovanni_Dall%27Orto_20-Feb-2007.jpg');
             background-size: cover;
             background-position: center;
             border-radius: 6px;
@@ -143,9 +166,9 @@
             font-size: 14px;
         }
 
-        /* Masquer le panneau de configuration lors de l'impression PDF */
+        /* Masquer les éléments d'administration lors de l'impression PDF */
         @media print {
-            .admin-panel { display: none; }
+            .admin-login-bar, .admin-panel { display: none !important; }
             body { background: none; padding: 0; }
             .a4-page { box-shadow: none; margin: 0; width: 100%; }
         }
@@ -153,9 +176,17 @@
 </head>
 <body>
 
-    <!-- Panneau interactif pour ajouter/modifier/supprimer -->
-    <div class="admin-panel">
-        <h3>⚙️ Gestion des annonces (Interactif)</h3>
+    <!-- Bouton de connexion pour l'administrateur -->
+    <div class="admin-login-bar" id="loginBar">
+        <button class="login-btn" onclick="adminLogin()">🔒 Espace Administrateur</button>
+    </div>
+
+    <!-- Panneau interactif de gestion (Protégé) -->
+    <div class="admin-panel" id="adminPanel">
+        <h3>
+            ⚙️ Gestion des annonces (Mode Administrateur)
+            <button class="btn btn-logout" onclick="adminLogout()">Déconnexion</button>
+        </h3>
         <div class="form-group">
             <input type="text" id="newDate" placeholder="Date (ex: LUNEDÌ 27 SETTEMBRE)">
             <select id="newType">
@@ -178,14 +209,14 @@
                 <h2>Milano</h2>
             </div>
 
-            <!-- Image de l'église -->
-            <div class="church-image" title="Chiesa di Sant'Alessandro in Zebidia"></div>
+            <!-- Image de l'église (chargée depuis Internet) -->
+            <div class="church-image" title="Chiesa di Sant'Alessandro in Zebidia - Milano"></div>
 
-            <!-- Corps des annonces dynamique -->
+            <!-- Corps des annonces -->
             <div class="content">
                 <div class="section-title">Avvisi Parrocchiali</div>
                 <div id="events-container">
-                    <!-- Les annonces seront injectées ici dynamiquement -->
+                    <!-- Les annonces seront injectées ici -->
                 </div>
             </div>
         </div>
@@ -197,6 +228,9 @@
     </div>
 
     <script>
+        // Mot de passe administrateur
+        const ADMIN_PASSWORD = "admin123";
+
         // Liste initiale des annonces
         let events = [
             {
@@ -211,6 +245,28 @@
             }
         ];
 
+        let isAdmin = false;
+
+        function adminLogin() {
+            let pwd = prompt("Entrez le mot de passe administrateur :");
+            if (pwd === ADMIN_PASSWORD) {
+                isAdmin = true;
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('loginBar').style.display = 'none';
+                renderEvents();
+                alert("Connexion réussie. Vous pouvez maintenant modifier, ajouter ou supprimer des annonces.");
+            } else if (pwd !== null) {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        function adminLogout() {
+            isAdmin = false;
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('loginBar').style.display = 'block';
+            renderEvents();
+        }
+
         function renderEvents() {
             const container = document.getElementById('events-container');
             container.innerHTML = "";
@@ -218,15 +274,25 @@
             events.forEach((ev, index) => {
                 const card = document.createElement('div');
                 card.className = `event-card ${ev.type === 'normal' ? 'normal' : ''}`;
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex-grow: 1;">
-                            <div class="event-date" contenteditable="true" onblur="updateEvent(${index}, 'date', this.innerText)">${ev.date}</div>
-                            <div class="event-details" contenteditable="true" onblur="updateEvent(${index}, 'details', this.innerHTML)">${ev.details}</div>
+                
+                if (isAdmin) {
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex-grow: 1;">
+                                <div class="event-date" contenteditable="true" onblur="updateEvent(${index}, 'date', this.innerText)" title="Cliquez pour modifier">${ev.date}</div>
+                                <div class="event-details" contenteditable="true" onblur="updateEvent(${index}, 'details', this.innerHTML)" title="Cliquez pour modifier">${ev.details}</div>
+                            </div>
+                            <button class="btn btn-danger" onclick="deleteEvent(${index})" title="Supprimer cette annonce">🗑️ Supprimer</button>
                         </div>
-                        <button class="btn btn-danger" onclick="deleteEvent(${index})" title="Supprimer cette annonce">🗑️ Supprimer</button>
-                    </div>
-                `;
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div>
+                            <div class="event-date">${ev.date}</div>
+                            <div class="event-details">${ev.details}</div>
+                        </div>
+                    `;
+                }
                 container.appendChild(card);
             });
         }
@@ -247,7 +313,6 @@
                 type: typeInput.value
             });
 
-            // Réinitialiser les champs
             dateInput.value = "";
             textInput.value = "";
 
@@ -255,16 +320,18 @@
         }
 
         function deleteEvent(index) {
-            events.splice(index, 1);
-            renderEvents();
+            if (confirm("Voulez-vous vraiment supprimer cette annonce ?")) {
+                events.splice(index, 1);
+                renderEvents();
+            }
         }
 
         function updateEvent(index, field, value) {
             events[index][field] = value;
         }
 
-        // Charger les annonces au démarrage
         renderEvents();
     </script>
 </body>
 </html>
+```[cite: 1, 2]
